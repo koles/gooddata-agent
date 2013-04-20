@@ -1,11 +1,18 @@
 package com.gooddata.agent;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
+
+import com.gooddata.agent.api.GdcRESTApiWrapper;
+import com.gooddata.agent.api.NamePasswordConfiguration;
+import com.gooddata.agent.api.GdcRESTApiWrapper.GraphExecutionResult;
 
 /**
  * Hello world!
@@ -13,8 +20,9 @@ import java.util.Properties;
  */
 public class Main 
 {
-    public static void main(String[] args)
-    {
+	private Configuration conf;
+
+	private Main(String[] args) {
         if (args.length != 1) {
         	error("Usage: java %s file.properties", Main.class.getName());
         }
@@ -27,14 +35,17 @@ public class Main
 		} catch (IOException e) {
 			error("Error reading file '%s'", propsFile);
 		}
-        Configuration conf = null;
 		try {
 			conf = Configuration.fromProperties(props);
 		} catch (InvalidConfigurationException e) {
 			errors(e.getErrors().values());
 		}
+	}
+
+	private void run() {
         Uploader u = new Uploader(conf.getGdcUploadUrl(), conf.getGdcUsername(), conf.getGdcPassword());
         Collector c = new Collector(conf.getFsInputDir(), conf.getFsWildcard());
+    	String remoteFileName = Utils.generateRemoteFileName(conf.getGdcUploadArchive());
         File archive = null;
 		try {
 			archive = c.collect();
@@ -42,10 +53,38 @@ public class Main
 			error("Error collection files: " + e.getMessage());
 		}
         try {
-			u.upload(archive, conf.getGdcUploadPath(), Utils.generateRemoteFileName(conf.getGdcUploadArchive()));
+			u.upload(archive, conf.getGdcUploadPath(), remoteFileName);
+			ok(format("%s uploaded under %s", remoteFileName, conf.getGdcUploadUrl()));
 		} catch (IOException e) {
 			error("Error uploading to WebDAV: " + e.getMessage());
 		}
+        if (conf.getGdcEtlProcessUrl() != null) {
+	        GdcRESTApiWrapper client = new GdcRESTApiWrapper(buildNamePasswordConfiguration(conf));
+	        Map<String,String> params = conf.getGdcEtlParams();
+	        params.put(conf.getGdcEtlParamNameFile(), remoteFileName);
+	        client.login();
+	        GraphExecutionResult ger = client.executeGraph(conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), params);
+	        ok(format("Graph %s under %s executed, log file at %s", conf.getGdcEtlProcessPath(), conf.getGdcEtlGraph(), ger.getLogUrl()));
+        } else {
+        	ok("ETL not set up, skipping");
+        }
+	}
+
+    public static void main(String[] args) {
+    	Main m = new Main(args);
+    	m.run();
+    }
+
+    private static NamePasswordConfiguration buildNamePasswordConfiguration(Configuration conf) {
+    	return new NamePasswordConfiguration(
+    			conf.getGdcApiProtocol(),
+    			conf.getGdcApiHost(),
+    			conf.getGdcUsername(),
+    			conf.getGdcPassword());
+    }
+
+    private static void ok(String msg) {
+    	System.out.println("OK: " + msg);
     }
 
     private static void error(String msg, String ... params) {

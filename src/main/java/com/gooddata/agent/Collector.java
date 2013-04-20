@@ -23,8 +23,9 @@ public class Collector {
 	public File collect() throws IOException {
         FileFilter fileFilter = new WildcardFileFilter(wildcard);
         File[] inputFiles = new File(inputDir).listFiles(fileFilter);
-        if (inputFiles.length == 0) {
-        	throw new FileNotFoundException(format("No files matching '%s' found", wildcard));
+        if (inputFiles == null || inputFiles.length == 0) {
+        	throw new FileNotFoundException(
+    			format("No files matching '%s' found under '%s'", wildcard, inputDir));
         }
         Map <String, File> inputFilesMap = new HashMap<String, File>();
         for (final File file : inputFiles) {
