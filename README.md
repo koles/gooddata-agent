@@ -4,10 +4,15 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
 
 ## Usage
 
+*Build:*
+
     git clone git://github.com/koles/gooddata-agent.git
     cd gooddata-agent
     vim my.properties
     mvn assembly:assembly
+
+*Run:*
+
     java -jar target/gdc-agent-0.1-SNAPSHOT-jar-with-dependencies.jar my.properties
 
 *Configuration:*
