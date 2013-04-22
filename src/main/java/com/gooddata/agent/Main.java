@@ -6,13 +6,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 import com.gooddata.agent.api.GdcRESTApiWrapper;
 import com.gooddata.agent.api.NamePasswordConfiguration;
 import com.gooddata.agent.api.GdcRESTApiWrapper.GraphExecutionResult;
+import com.gooddata.agent.jdbc.JdbcConnector;
+import com.gooddata.agent.jdbc.JdbcExtractor;
 
 /**
  * Hello world!
@@ -44,11 +49,44 @@ public class Main
 
 	private void run() {
         Uploader u = new Uploader(conf.getGdcUploadUrl(), conf.getGdcUsername(), conf.getGdcPassword());
-        Collector c = new Collector(conf.getFsInputDir(), conf.getFsWildcard());
+        Collector collector = new Collector();
+        if (conf.getJdbcUrl() != null) {
+        	JdbcConnector connector = new JdbcConnector();
+        	connector.setDriver(conf.getJdbcDriver());
+        	connector.setDriverPath(conf.getJdbcDriverPath());
+        	connector.setJdbcUrl(conf.getJdbcUrl());
+        	connector.setUsername(conf.getJdbcUsername());
+        	connector.setPassword(conf.getJdbcPassword());
+        	JdbcExtractor extractor= new JdbcExtractor(connector);
+        	try {
+				File jdbcExtractsDir = extractor.extract(conf.getJdbcExtractMappings());
+				if (jdbcExtractsDir != null) { // there are some database extracts
+					try {
+						collector.add(jdbcExtractsDir, "*");
+					} catch (IOException e) {
+						error("Cannot read database extracts from temporary directory %s",
+								jdbcExtractsDir.getAbsolutePath());
+					}
+				}
+			} catch (IOException e) {
+				error("Error extracting data from database: %s", e.getMessage());
+			} catch (SQLException e) {
+				error("Error extracting data from database: %s", e.getMessage());
+			}
+        } else {
+        	ok("JDBC data source not configured, skipping");
+        }
+        if (conf.getFsInputDir() != null) {
+        	try {
+        		collector.add(conf.getFsInputDir(), conf.getFsWildcard());
+        	} catch (IOException e) {
+        		error("Error reading from %s", conf.getFsInputDir());
+        	}
+        }
     	String remoteFileName = Utils.generateRemoteFileName(conf.getGdcUploadArchive());
         File archive = null;
 		try {
-			archive = c.collect();
+			archive = collector.collect();
 		} catch (IOException e) {
 			error("Error collection files: " + e.getMessage());
 		}

@@ -12,14 +12,27 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
 
 *Configuration:*
 
-    ######################################
-    ### Source data on the file system ###
-    ######################################
+    ##########################################
+    ### Source data on a local file system ###
+    ##########################################
 
     # include all CSV files from that directory in the zip file
     filesystem.input_dir=/tmp/exports/to_gooddata
     filesystem.wildcard=*.csv
-    
+
+    #################################
+    ### Source data in a database ###
+    #################################
+    jdbc.driver_path=/usr/share/java/mysql-connector-java-5.1.5.jar
+    jdbc.driver=com.mysql.jdbc.Driver
+    jdbc.username=extracts
+    jdbc.password=*******
+    jdbc.url=jdbc:mysql://localhost/test
+
+    # TODO support for incremental upload
+    data.user.sql=SELECT id,name,email FROM user
+    data.message.sql=SELECT id,title,category,author_id,posted FROM user WHERE deleted IS NULL
+
     ##############################
     ### GoodData configuration ###
     ##############################
@@ -40,4 +53,4 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
 
 ## TODO
 
-* Pull source data from a database via JDBC
+* Pull source data from a database via JDBC using the incremental mode

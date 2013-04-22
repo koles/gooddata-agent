@@ -13,24 +13,25 @@ import java.util.Map;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 public class Collector {
-	private final String inputDir, wildcard;
-
-	public Collector(String inputDir, String wildcard) {
-		this.inputDir = inputDir;
-		this.wildcard = wildcard;
+	private final Map <String, File> inputFilesMap = new HashMap<String, File>();
+	
+	public void add(String inputDir, String wildcard) throws IOException {
+		add(new File(inputDir), wildcard);
 	}
 
-	public File collect() throws IOException {
+	public void add(File inputDir, String wildcard) throws IOException {
         FileFilter fileFilter = new WildcardFileFilter(wildcard);
-        File[] inputFiles = new File(inputDir).listFiles(fileFilter);
+        File[] inputFiles = inputDir.listFiles(fileFilter);
         if (inputFiles == null || inputFiles.length == 0) {
         	throw new FileNotFoundException(
     			format("No files matching '%s' found under '%s'", wildcard, inputDir));
         }
-        Map <String, File> inputFilesMap = new HashMap<String, File>();
         for (final File file : inputFiles) {
         	inputFilesMap.put(file.getName(), file);
-        }
+        }		
+	}
+
+	public File collect() throws IOException {
         File archive = File.createTempFile("gdca-", ".zip");
         archive.deleteOnExit();
         createZipArchive(inputFilesMap, archive.getAbsolutePath());

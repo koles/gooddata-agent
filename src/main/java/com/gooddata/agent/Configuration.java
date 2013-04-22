@@ -15,6 +15,7 @@ public class Configuration {
 	private Map<String,Exception> errors = new HashMap<String, Exception>();
 	private Map<String,String[]> ALL_OR_NONE = new HashMap<String, String[]>(){{
 		put("gdc.etl.*", new String[] { "gdc.etl.process_url", "gdc.etl.graph" });
+		put("jdbc.*", new String[] { "jdbc.driverPath", "jdbc.driver", "jdbc.username", "jdbc.url" });
 	}};
 
 	private Configuration(Properties props) {}
@@ -41,7 +42,16 @@ public class Configuration {
 		// Source files
 		conf.setFsInputDir(props.getProperty("filesystem.input_dir"));
 		conf.setFsWildcard(props.getProperty("filesystem.wildcard"));
-		
+
+		// JDBC Data Source
+		conf.setJdbcDriver(props.getProperty("jdbc.driver"));
+		conf.setJdbcDriverPath(props.getProperty("jdbc.driver_path"));
+		conf.setJdbcUsername(props.getProperty("jdbc.username"));
+		conf.setJdbcPassword(props.getProperty("jdbc.password"));
+		conf.setJdbcUrl(props.getProperty("jdbc.url"));
+
+		// JDBC data sets
+		conf.jdbcExtractMappings = buildJdbcExtractMappings(props, "data.", ".sql");
 		conf.validate();
 		return conf;
 	}
@@ -84,9 +94,15 @@ public class Configuration {
 				   gdcEtlProcessUrl = null,
 				   gdcEtlGraph = null,
 				   gdcEtlParamNameFile = null,
-				   gdcUploadArchive = null;
+				   gdcUploadArchive = null,
+				   jdbcDriverPath = null,
+				   jdbcDriver = null,
+				   jdbcUsername = null,
+				   jdbcPassword = null,
+				   jdbcUrl;
 
-	private Map<String,String> gdcEtlParams = new HashMap<String,String>();
+	private Map<String,String> gdcEtlParams = null,
+			                   jdbcExtractMappings = null;
 
 	// Source files
 	private String fsInputDir = null,
@@ -187,12 +203,11 @@ public class Configuration {
 	private static Map<String,String> buildParams(Properties props, String paramsPrefix) {
 		Map<String,String> result = new HashMap<String, String>();
 		Enumeration propNames = props.propertyNames();
-		if (propNames.hasMoreElements()) {
-			for (String p = (String)propNames.nextElement(); propNames.hasMoreElements(); p = (String)propNames.nextElement()) {
-				if (p.startsWith(paramsPrefix)) {
-					String paramName = p.replaceFirst(paramsPrefix, "");
-					result.put(paramName, props.getProperty(p));
-				}
+		while (propNames.hasMoreElements()) {
+			String p = (String)propNames.nextElement();
+			if (p.startsWith(paramsPrefix)) {
+				String paramName = p.replaceFirst(paramsPrefix, "");
+				result.put(paramName, props.getProperty(p));
 			}
 		}
 		return result;
@@ -220,6 +235,63 @@ public class Configuration {
 
 	public String getGdcEtlProcessPath() {
 		return gdcEtlProcessPath;
+	}
+
+	public String getJdbcDriverPath() {
+		return jdbcDriverPath;
+	}
+
+	public void setJdbcDriverPath(String jdbcDriverPath) {
+		this.jdbcDriverPath = jdbcDriverPath;
+	}
+
+	public String getJdbcDriver() {
+		return jdbcDriver;
+	}
+
+	public void setJdbcDriver(String jdbcDriver) {
+		this.jdbcDriver = jdbcDriver;
+	}
+
+	public String getJdbcUsername() {
+		return jdbcUsername;
+	}
+
+	public void setJdbcUsername(String jdbcUsername) {
+		this.jdbcUsername = jdbcUsername;
+	}
+
+	public String getJdbcPassword() {
+		return jdbcPassword;
+	}
+
+	public void setJdbcPassword(String jdbcPassword) {
+		this.jdbcPassword = jdbcPassword;
+	}
+
+	public String getJdbcUrl() {
+		return jdbcUrl;
+	}
+
+	public void setJdbcUrl(String jdbcUrl) {
+		this.jdbcUrl = jdbcUrl;
+	}
+
+	public Map<String, String> getJdbcExtractMappings() {
+		return jdbcExtractMappings;
+	}
+
+	private static Map<String, String> buildJdbcExtractMappings(Properties props, String prefix, String suffix) {
+		Map<String,String> result = new HashMap<String, String>();
+		Enumeration propNames = props.propertyNames();
+		while (propNames.hasMoreElements()) {
+			String p = (String)propNames.nextElement();
+			if (p.startsWith(prefix) && p.endsWith(suffix)) {
+				String dataset = p.replaceFirst(prefix, "").replaceAll(suffix + "$", "");
+				result.put(dataset, props.getProperty(p));
+			}
+		}
+		return result;
 	}
 
 }
