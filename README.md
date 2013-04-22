@@ -4,16 +4,13 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
 
 ## Usage
 
-*Build:*
+*Download:*
 
-    git clone git://github.com/koles/gooddata-agent.git
-    cd gooddata-agent
-    vim my.properties
-    mvn assembly:assembly
+from http://gooddata.s3.amazonaws.com/agent/gdc-agent-0.1.jar
 
 *Run:*
 
-    java -jar target/gdc-agent-0.1-SNAPSHOT-jar-with-dependencies.jar my.properties
+    java -jar target/gdc-agent-0.1.jar my.properties
 
 *Configuration:*
 
@@ -55,6 +52,16 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
     gdc.etl.graph=Test/graph/import_archive.grf
     gdc.etl.param.param1=a parameter
     gdc.etl.param.param2=yet another parameter
+
+
+*... or build from sources:*
+
+    git clone git://github.com/koles/gooddata-agent.git
+    cd gooddata-agent
+    vim my.properties
+    mvn assembly:assembly
+    
+    java -jar target/gdc-agent-0.1-SNAPSHOT-jar-with-dependencies.jar my.properties
 
 ## TODO
 
