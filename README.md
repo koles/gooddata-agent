@@ -46,6 +46,20 @@ from http://gooddata.s3.amazonaws.com/agent/gdc-agent-0.1.jar
     # Target
     gdc.upload_url=https://secure-di.gooddata.com/project-uploads/fqp21nrdqm666u5nwgl0upsgee4a4xv2/
     gdc.upload_archive=data-${yyyyMMddHHmmss}.zip
+    #
+    # Alternatively, you can upload uncompressed files individually and
+    # reference them by a manifest file; the manifest is a text file including
+    # each file name per line:
+    # gdc.upload_manifest=manifest-${yyyyMMddHHmmss}.txt
+    #
+    # You can override the names of parameters that are used to send the
+    # manifest or zip file names, timestamp and repords dir
+    # gdc.etl.param_name.file=gdc_agent_zip
+    # gdc.etl.param_name.manifest=gdc_agent_manifest
+    # gdc.etl.param_name.now=gdc_agent_now
+    # Remote directory where the ETL is expected to put any reports
+    # about the execution.
+    # gdc.etl.param_name.repords=gdc_agent_reports
 
     # CloudConnect ETL configuration
     gdc.etl.process_url=https://secure.gooddata.com/gdc/projects/fqp21nrdqm666u5nwgl0upsgee4a4xv2/dataload/processes/5f4b4ca9-3f1f-4821-80b1-17322e831e40

@@ -6,16 +6,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
 import com.gooddata.agent.api.GdcRESTApiWrapper;
-import com.gooddata.agent.api.NamePasswordConfiguration;
 import com.gooddata.agent.api.GdcRESTApiWrapper.GraphExecutionResult;
+import com.gooddata.agent.api.NamePasswordConfiguration;
 import com.gooddata.agent.jdbc.JdbcConnector;
 import com.gooddata.agent.jdbc.JdbcExtractor;
 
@@ -48,8 +47,44 @@ public class Main
 	}
 
 	private void run() {
+		Date now = new Date();
         Uploader u = new Uploader(conf.getGdcUploadUrl(), conf.getGdcUsername(), conf.getGdcPassword());
-        Collector collector = new Collector();
+        Collector collector = (conf.getGdcUploadArchive() != null)
+        		? new ArchiveCollector(conf.getGdcUploadArchive(), now)
+        		: new ManifestCollector(conf.getGdcUploadManifest(), now);
+        jdbcExtract(collector);
+        fsExtract(collector);
+
+        Map<File,String >toUpload = null;
+		try {
+			toUpload = collector.collect();
+		} catch (IOException e) {
+			error("Error collection files: " + e.getMessage());
+		}
+        try {
+			u.upload(toUpload, conf.getGdcUploadPath());
+			ok(format("File(s) uploaded under %s", conf.getGdcUploadUrl()));
+		} catch (IOException e) {
+			error("Error uploading to WebDAV: " + e.getMessage());
+		}
+        if (conf.getGdcEtlProcessUrl() != null) {
+	        GdcRESTApiWrapper client = new GdcRESTApiWrapper(buildNamePasswordConfiguration(conf));
+	        Map<String,String> params = conf.getGdcEtlParams();
+	        if (conf.getGdcEtlParamNameZip() != null) {
+	        	params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
+	        }
+	        if (conf.getGdcEtlParamNameManifest() != null) {
+	        	params.put(conf.getGdcEtlParamNameManifest(), collector.getMainFile());
+	        }
+	        client.login();
+	        GraphExecutionResult ger = client.executeGraph(conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), params);
+	        ok(format("Graph %s under %s executed, log file at %s", conf.getGdcEtlProcessPath(), conf.getGdcEtlGraph(), ger.getLogUrl()));
+        } else {
+        	ok("ETL not set up, skipping");
+        }
+	}
+	
+	private void jdbcExtract(Collector collector) {
         if (conf.getJdbcUrl() != null) {
         	JdbcConnector connector = new JdbcConnector();
         	connector.setDriver(conf.getJdbcDriver());
@@ -76,35 +111,15 @@ public class Main
         } else {
         	ok("JDBC data source not configured, skipping");
         }
+	}
+
+	public void fsExtract(Collector collector) {
         if (conf.getFsInputDir() != null) {
         	try {
         		collector.add(conf.getFsInputDir(), conf.getFsWildcard());
         	} catch (IOException e) {
         		error("Error reading from %s", conf.getFsInputDir());
         	}
-        }
-    	String remoteFileName = Utils.generateRemoteFileName(conf.getGdcUploadArchive());
-        File archive = null;
-		try {
-			archive = collector.collect();
-		} catch (IOException e) {
-			error("Error collection files: " + e.getMessage());
-		}
-        try {
-			u.upload(archive, conf.getGdcUploadPath(), remoteFileName);
-			ok(format("%s uploaded under %s", remoteFileName, conf.getGdcUploadUrl()));
-		} catch (IOException e) {
-			error("Error uploading to WebDAV: " + e.getMessage());
-		}
-        if (conf.getGdcEtlProcessUrl() != null) {
-	        GdcRESTApiWrapper client = new GdcRESTApiWrapper(buildNamePasswordConfiguration(conf));
-	        Map<String,String> params = conf.getGdcEtlParams();
-	        params.put(conf.getGdcEtlParamNameFile(), remoteFileName);
-	        client.login();
-	        GraphExecutionResult ger = client.executeGraph(conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), params);
-	        ok(format("Graph %s under %s executed, log file at %s", conf.getGdcEtlProcessPath(), conf.getGdcEtlGraph(), ger.getLogUrl()));
-        } else {
-        	ok("ETL not set up, skipping");
         }
 	}
 

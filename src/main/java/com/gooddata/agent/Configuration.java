@@ -6,17 +6,48 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
+
 public class Configuration {
-	public static final String DEFAULT_FILE_PARAM = "file";
+	/**
+	 * The default name of a parameter used to pass the zip file 
+	 * with data to be processed.
+	 */
+	public static final String DEFAULT_PARAM_ZIP = "gdc_agent_zip";
+
+	/**
+	 * The default name of a parameter used to pass the manifest text file
+	 * that contains the list of files to be processed.
+	 */
+	public static final String DEFAULT_PARAM_MANIFEST = "gdc_agent_zip";
+	
+	/**
+	 * The default name of a parameter used to pass the timestamp 
+	 * formatted as yyyyMMddHHmmss.
+	 */
+	public static final String DEFAULT_PARAM_NOW = "gdc_agent_now";
+	
+	/**
+	 * The default name of a parameter used to pass a remote directory where
+	 * the ETL is expected to put any information about results of the data
+	 * processing.
+	 * Designed primarily for the purpose of fetching Contract Checker's
+	 * reports.
+	 */
+	public static final String DEFAULT_PARAM_REPORTS = "gdc_agent_reports";
 
 	private Map<String,Exception> errors = new HashMap<String, Exception>();
 	private Map<String,String[]> ALL_OR_NONE = new HashMap<String, String[]>(){{
 		put("gdc.etl.*", new String[] { "gdc.etl.process_url", "gdc.etl.graph" });
 		put("jdbc.*", new String[] { "jdbc.driverPath", "jdbc.driver", "jdbc.username", "jdbc.url" });
 	}};
+	private String[][] ALTERNATIVES = new String[][] {
+		new String[] { "gdc.upload_archive", "gdc.upload_manifest" } 
+	};
 
 	private Configuration(Properties props) {}
 	
@@ -37,8 +68,12 @@ public class Configuration {
 		}
 		conf.setGdcEtlGraph(props.getProperty("gdc.etl.graph"));
 		conf.setGdcEtlParams(buildParams(props, "gdc.etl.param."));
-		conf.setGdcEtlParamNameFile(props.getProperty("gdc.etl.param_name.file"));
+		conf.setGdcEtlParamNameZip(props.getProperty("gdc.etl.param_name.file"));
+		conf.setGdcEtlParamNameManifest(props.getProperty("gdc.etl.param_name.manifest"));
+		conf.setGdcEtlParamNameNow(props.getProperty("gdc.etl.param_name.now"));
+		conf.setGdcEtlParamNameReports(props.getProperty("gdc.etl.param_name.reports"));
 		conf.setGdcUploadArchive(props.getProperty("gdc.upload_archive"));
+		conf.setGdcUploadManifest(props.getProperty("gdc.upload_manifest"));
 		// Source files
 		conf.setFsInputDir(props.getProperty("filesystem.input_dir"));
 		conf.setFsWildcard(props.getProperty("filesystem.wildcard"));
@@ -52,11 +87,11 @@ public class Configuration {
 
 		// JDBC data sets
 		conf.jdbcExtractMappings = buildJdbcExtractMappings(props, "data.", ".sql");
-		conf.validate();
+		conf.validate(props);
 		return conf;
 	}
 	
-	private void validate() throws InvalidConfigurationException {
+	private void validate(Properties props) throws InvalidConfigurationException {
 		for (Map.Entry<String, String[]> aon : ALL_OR_NONE.entrySet()) {
 			int itemsSet = 0;
 			for (String i : aon.getValue()) {
@@ -66,6 +101,21 @@ public class Configuration {
 				errors.put(
 					aon.getKey(),
 					new IllegalArgumentException(format("None or all of %s properties should be set", aon.getKey())));
+			}
+		}
+		for (String[] alts : ALTERNATIVES) {
+			boolean defined = false;
+			inner_loop: for (String a : alts) {
+				if (props.getProperty(a) != null) {
+					if (defined) {
+						errors.put(a, new IllegalArgumentException(
+								format("Exactly one of the following properties must be set: %s",
+								StringUtils.join(alts, ", "))));
+						break inner_loop; // unnecessary, just for clarity
+					} else {
+						defined = true;
+					}
+				}
 			}
 		}
 		if (!errors.isEmpty()) {
@@ -93,13 +143,25 @@ public class Configuration {
 				   gdcEtlProcessPath = null,
 				   gdcEtlProcessUrl = null,
 				   gdcEtlGraph = null,
-				   gdcEtlParamNameFile = null,
+				   gdcEtlParamNameZip = null,
+				   gdcEtlParamNameManifest = null,
+				   gdcEtlParamNameNow = null,
+				   gdcEtlParamNameReports = null,
 				   gdcUploadArchive = null,
+				   gdcUploadManifest = null,
 				   jdbcDriverPath = null,
 				   jdbcDriver = null,
 				   jdbcUsername = null,
 				   jdbcPassword = null,
 				   jdbcUrl;
+
+	public String getGdcUploadManifest() {
+		return gdcUploadManifest;
+	}
+
+	public void setGdcUploadManifest(String gdcUploadManifest) {
+		this.gdcUploadManifest = gdcUploadManifest;
+	}
 
 	private Map<String,String> gdcEtlParams = null,
 			                   jdbcExtractMappings = null;
@@ -217,12 +279,12 @@ public class Configuration {
 		this.gdcEtlParams = gdcEtlParams;
 	}
 
-	public String getGdcEtlParamNameFile() {
-		return gdcEtlParamNameFile;
+	public String getGdcEtlParamNameZip() {
+		return gdcEtlParamNameZip;
 	}
 
-	public void setGdcEtlParamNameFile(String gdcEtlParamNameFile) {
-		this.gdcEtlParamNameFile = (gdcEtlParamNameFile == null) ? DEFAULT_FILE_PARAM : gdcEtlParamNameFile;
+	public void setGdcEtlParamNameZip(String gdcEtlParamNameZip) {
+		this.gdcEtlParamNameZip = (gdcEtlParamNameZip == null) ? DEFAULT_PARAM_ZIP : gdcEtlParamNameZip;
 	}
 
 	public String getGdcApiHost() {
@@ -292,6 +354,30 @@ public class Configuration {
 			}
 		}
 		return result;
+	}
+
+	public String getGdcEtlParamNameManifest() {
+		return gdcEtlParamNameManifest;
+	}
+
+	public void setGdcEtlParamNameManifest(String gdcEtlParamNameManifest) {
+		this.gdcEtlParamNameManifest = gdcEtlParamNameManifest;
+	}
+
+	public String getGdcEtlParamNameNow() {
+		return gdcEtlParamNameNow;
+	}
+
+	public void setGdcEtlParamNameNow(String gdcEtlParamNameNow) {
+		this.gdcEtlParamNameNow = gdcEtlParamNameNow;
+	}
+
+	public String getGdcEtlParamNameReports() {
+		return gdcEtlParamNameReports;
+	}
+
+	public void setGdcEtlParamNameReports(String gdcEtlParamNameReports) {
+		this.gdcEtlParamNameReports = gdcEtlParamNameReports;
 	}
 
 }

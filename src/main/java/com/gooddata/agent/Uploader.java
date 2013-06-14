@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
@@ -29,9 +30,11 @@ public class Uploader {
         this.baseUrl = baseUrl + slash;
     }
 
-	public void upload(final File fileToUpload, final String remoteDir, final String remoteFileName) throws IOException {
-		final String uploadedUrl = uploadTemp(fileToUpload, remoteDir, remoteFileName);
-		move(remoteDir, uploadedUrl);
+	public void upload(final Map<File,String> filesToUpload, final String remoteDir) throws IOException {
+		for (Map.Entry<File, String> e : filesToUpload.entrySet()) {
+			final String uploadedUrl = uploadTemp(e.getKey(), remoteDir, e.getValue());
+			move(remoteDir, uploadedUrl, e.getValue());
+		}
 	}
 
 	public String uploadTemp(final File fileToUpload, final String remoteDir, final String remoteFileName) throws IOException {
@@ -48,9 +51,10 @@ public class Uploader {
 	    return tempUrl;
 	}
 	
-	private void move(final String remoteDir, final String tempUrl) throws HttpException, IOException {
-		final String targetUrl = fromTempPath(tempUrl);
-		MoveMethod method = new MoveMethod(tempUrl, targetUrl, false); // conflict should not happen but just in case...
+	private void move(final String remoteDir, final String tempUrl, String targetName) throws HttpException, IOException {
+		final String targetUrl = baseUrl + targetName;
+		System.out.println(tempUrl + " -> " + targetUrl);
+		MoveMethod method = new MoveMethod(tempUrl, targetUrl, true);
 		client.getParams().setAuthenticationPreemptive(true);
 		client.executeMethod(method);
 		final int sc = method.getStatusCode();
@@ -62,9 +66,5 @@ public class Uploader {
 	
 	private String toTempPath(final String path) {
 		return path + "." + System.currentTimeMillis();
-	}
-	
-	private String fromTempPath(final String path) {
-		return path.replaceFirst("\\.[^\\.]*$", "");
 	}
 }
