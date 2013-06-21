@@ -23,7 +23,7 @@ public class Configuration {
 	 * The default name of a parameter used to pass the manifest text file
 	 * that contains the list of files to be processed.
 	 */
-	public static final String DEFAULT_PARAM_MANIFEST = "gdc_agent_zip";
+	public static final String DEFAULT_PARAM_MANIFEST = "gdc_agent_manifest";
 	
 	/**
 	 * The default name of a parameter used to pass the timestamp 
@@ -361,7 +361,7 @@ public class Configuration {
 	}
 
 	public void setGdcEtlParamNameManifest(String gdcEtlParamNameManifest) {
-		this.gdcEtlParamNameManifest = gdcEtlParamNameManifest;
+		this.gdcEtlParamNameManifest = (gdcEtlParamNameManifest == null) ? DEFAULT_PARAM_MANIFEST : gdcEtlParamNameManifest;
 	}
 
 	public String getGdcEtlParamNameNow() {
@@ -369,7 +369,7 @@ public class Configuration {
 	}
 
 	public void setGdcEtlParamNameNow(String gdcEtlParamNameNow) {
-		this.gdcEtlParamNameNow = gdcEtlParamNameNow;
+		this.gdcEtlParamNameNow = (gdcEtlParamNameNow == null) ? DEFAULT_PARAM_NOW : gdcEtlParamNameNow;
 	}
 
 	public String getGdcEtlParamNameReports() {
@@ -377,7 +377,7 @@ public class Configuration {
 	}
 
 	public void setGdcEtlParamNameReports(String gdcEtlParamNameReports) {
-		this.gdcEtlParamNameReports = gdcEtlParamNameReports;
+		this.gdcEtlParamNameReports = (gdcEtlParamNameReports == null) ? DEFAULT_PARAM_REPORTS : null;
 	}
 
 }

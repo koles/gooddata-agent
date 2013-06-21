@@ -70,10 +70,10 @@ public class Main
         if (conf.getGdcEtlProcessUrl() != null) {
 	        GdcRESTApiWrapper client = new GdcRESTApiWrapper(buildNamePasswordConfiguration(conf));
 	        Map<String,String> params = conf.getGdcEtlParams();
-	        if (conf.getGdcEtlParamNameZip() != null) {
+	        if (conf.getGdcUploadArchive() != null) {
 	        	params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
 	        }
-	        if (conf.getGdcEtlParamNameManifest() != null) {
+	        if (conf.getGdcUploadManifest() != null) {
 	        	params.put(conf.getGdcEtlParamNameManifest(), collector.getMainFile());
 	        }
 	        client.login();
