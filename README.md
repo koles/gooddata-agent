@@ -79,7 +79,3 @@ from http://gooddata.s3.amazonaws.com/agent/gdc-agent-0.4.jar
     mvn assembly:assembly
     
     java -jar target/gdc-agent-0.1-SNAPSHOT-jar-with-dependencies.jar my.properties
-
-## TODO
-
-* Pull source data from a database via JDBC using the incremental mode
