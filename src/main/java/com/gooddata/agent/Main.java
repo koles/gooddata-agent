@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.log4j.PropertyConfigurator;
+
 import com.gooddata.agent.api.GdcRESTApiWrapper;
 import com.gooddata.agent.api.GdcRESTApiWrapper.GraphExecutionResult;
 import com.gooddata.agent.api.NamePasswordConfiguration;
@@ -24,6 +26,7 @@ import com.gooddata.agent.jdbc.JdbcExtractor;
  */
 public class Main 
 {
+	public static final String LOG4J_FILENAME = "log4j.properties";
 	private Configuration conf;
 
 	private Main(String[] args) {
@@ -124,6 +127,9 @@ public class Main
 	}
 
     public static void main(String[] args) {
+      if (new File(LOG4J_FILENAME).exists()) {
+        PropertyConfigurator.configure(LOG4J_FILENAME);
+      }
     	Main m = new Main(args);
     	m.run();
     }
