@@ -34,6 +34,7 @@ public class JdbcExtractor {
 		try {
 			for (Map.Entry<String, String> entry : datasets.entrySet()) {
 				writeResultSet(conn, entry.getValue(), tmpdir, entry.getKey() + ".csv");
+				extracts++;
 			}
 		} finally {
 			conn.close();
