@@ -14,7 +14,7 @@ Create and edit the properties file (e.g. "my.properties") based on the commente
 
 *Run:*
 
-    java -jar target/gdc-agent-0.4.jar my.properties
+    java -jar target/gdc-agent-0.5.jar my.properties
 
 *Sample Configuration:*
 
