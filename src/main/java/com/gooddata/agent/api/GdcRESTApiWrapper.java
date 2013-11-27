@@ -2403,7 +2403,7 @@ public class GdcRESTApiWrapper {
                 if (state != null && !state.isNullObject() && !state.isEmpty()) {
                     String status = state.getString("status");
                     l.debug("TaskMan status=" + status);
-                    if (!"RUNNING".equals(status)) {
+                    if (!"RUNNING".equals(status) && !"QUEUED".equals(status)) {
                     	String logUrl = state.getString("logFileName");
                     	return new GraphExecutionResult(status, logUrl);
                     }
