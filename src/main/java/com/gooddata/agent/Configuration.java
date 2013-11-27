@@ -201,11 +201,17 @@ public class Configuration {
 	}
 
 	private void setGdcUploadUrl(String gdcUploadUrl) throws MalformedURLException {
-		this.gdcUploadUrl = gdcUploadUrl;
-		URL url = new URL(gdcUploadUrl);
-		this.gdcUploadHost = url.getHost();
-		this.gdcUploadProtocol = url.getProtocol();
-		this.gdcUploadPath = url.getPath();
+	   if (gdcUploadUrl != null) {
+   		this.gdcUploadUrl = gdcUploadUrl;
+   		try {
+      		URL url = new URL(gdcUploadUrl);
+      		this.gdcUploadHost = url.getHost();
+      		this.gdcUploadProtocol = url.getProtocol();
+      		this.gdcUploadPath = url.getPath();
+   		} catch (MalformedURLException e) {
+   		   throw new RuntimeException("The upload URL " + gdcUploadUrl + " is invalid");
+   		}
+	   }
 	}
 
 	public String getGdcUploadArchive() {
@@ -243,10 +249,14 @@ public class Configuration {
 	public void setGdcEtlProcessUrl(String gdcEtlProcessUrl) throws MalformedURLException {
 		if (gdcEtlProcessUrl != null) {
 			this.gdcEtlProcessUrl = gdcEtlProcessUrl;
-			URL url = new URL(gdcEtlProcessUrl);
-			this.gdcApiHost = url.getHost();
-			this.gdcApiProtocol = url.getProtocol();
-			this.gdcEtlProcessPath = url.getPath();
+			try {
+   			URL url = new URL(gdcEtlProcessUrl);
+   			this.gdcApiHost = url.getHost();
+   			this.gdcApiProtocol = url.getProtocol();
+   			this.gdcEtlProcessPath = url.getPath();
+			} catch (MalformedURLException e) {
+			   throw new RuntimeException("The ETL process URL " + gdcEtlProcessUrl + " is invalid");
+			}
 		}
 	}
 
