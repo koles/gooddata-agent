@@ -57,7 +57,7 @@ public class Configuration {
 		conf.setGdcUsername(required(props, "gdc.username", conf.errors));
 		conf.setGdcPassword(required(props, "gdc.password", conf.errors));
 		try {
-			conf.setGdcUploadUrl(required(props, "gdc.upload_url", conf.errors));
+			conf.setGdcUploadUrl(props.getProperty("gdc.upload_url"));
 		} catch (Exception e) {
 			conf.errors.put("gdc.upload_url", e);
 		}

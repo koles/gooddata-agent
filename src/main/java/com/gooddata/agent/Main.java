@@ -51,40 +51,47 @@ public class Main
 
 	private void run() {
 		Date now = new Date();
-        Uploader u = new Uploader(conf.getGdcUploadUrl(), conf.getGdcUsername(), conf.getGdcPassword());
-        Collector collector = (conf.getGdcUploadArchive() != null)
-        		? new ArchiveCollector(conf.getGdcUploadArchive(), now)
-        		: new ManifestCollector(conf.getGdcUploadManifest(), now);
-        jdbcExtract(collector);
-        fsExtract(collector);
+		Collector collector = null;
+		if (conf.getGdcUploadUrl() == null) {
+		   ok("Upload URL is not set up, skipping");
+		} else {
+         Uploader u = new Uploader(conf.getGdcUploadUrl(), conf.getGdcUsername(), conf.getGdcPassword());
+         collector = (conf.getGdcUploadArchive() != null)
+           		? new ArchiveCollector(conf.getGdcUploadArchive(), now)
+           		: new ManifestCollector(conf.getGdcUploadManifest(), now);
+         jdbcExtract(collector);
+         fsExtract(collector);
 
-        Map<File,String >toUpload = null;
-		try {
-			toUpload = collector.collect();
-		} catch (IOException e) {
-			error("Error collection files: " + e.getMessage());
+         Map<File,String >toUpload = null;
+   		try {
+   			toUpload = collector.collect();
+   		} catch (IOException e) {
+   			error("Error collection files: " + e.getMessage());
+   		}
+         try {
+   			u.upload(toUpload, conf.getGdcUploadPath());
+   			ok(format("File(s) uploaded under %s", conf.getGdcUploadUrl()));
+   		} catch (IOException e) {
+   		   error("Error uploading to WebDAV: " + e.getMessage());
+   		}
 		}
-        try {
-			u.upload(toUpload, conf.getGdcUploadPath());
-			ok(format("File(s) uploaded under %s", conf.getGdcUploadUrl()));
-		} catch (IOException e) {
-			error("Error uploading to WebDAV: " + e.getMessage());
-		}
-        if (conf.getGdcEtlProcessUrl() != null) {
+      if (conf.getGdcEtlProcessUrl() != null) {
 	        GdcRESTApiWrapper client = new GdcRESTApiWrapper(buildNamePasswordConfiguration(conf));
 	        Map<String,String> params = conf.getGdcEtlParams();
-	        if (conf.getGdcUploadArchive() != null) {
-	        	params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
-	        }
-	        if (conf.getGdcUploadManifest() != null) {
-	        	params.put(conf.getGdcEtlParamNameManifest(), collector.getMainFile());
+	        if (conf.getGdcUploadUrl() != null) {
+   	        if (conf.getGdcUploadArchive() != null) {
+   	        	params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
+   	        }
+   	        if (conf.getGdcUploadManifest() != null) {
+   	        	params.put(conf.getGdcEtlParamNameManifest(), collector.getMainFile());
+   	        }
 	        }
 	        client.login();
 	        GraphExecutionResult ger = client.executeGraph(conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), params);
 	        ok(format("Graph %s under %s executed, log file at %s", conf.getGdcEtlProcessPath(), conf.getGdcEtlGraph(), ger.getLogUrl()));
-        } else {
+      } else {
         	ok("ETL not set up, skipping");
-        }
+      }
 	}
 	
 	private void jdbcExtract(Collector collector) {
