@@ -18,13 +18,13 @@ Create and edit the properties file (e.g. "my.properties") based on the commente
 
 Note: the following configuration parameters can be overriden using
 command line parameters:
-  * jdbc.driver`: `--jdbc-driver`
-  * jdbc.driverPath`: `--jdbc-driverPath`
-  * jdbc.password`: `--jdbc-password`
-  * jdbc.url`: `--jdbc-url`
-  * jdbc.username`: `--jdbc-username`
-  * gdc.password`: `--gdc-password`
-  * gdc.username`: `--gdc-username`
+  * `jdbc.driver`: `--jdbc-driver`
+  * `jdbc.driverPath`: `--jdbc-driverPath`
+  * `jdbc.password`: `--jdbc-password`
+  * `jdbc.url`: `--jdbc-url`
+  * `jdbc.username`: `--jdbc-username`
+  * `gdc.password`: `--gdc-password`
+  * `gdc.username`: `--gdc-username`
 
 For example:
 
