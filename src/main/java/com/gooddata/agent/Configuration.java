@@ -4,16 +4,33 @@ import static java.lang.String.format;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
 public class Configuration {
-	/**
+	public static final String JDBC_PASSWORD = "jdbc.password";
+
+   public static final String GDC_PASSWORD = "gdc.password";
+
+   public static final String GDC_USERNAME = "gdc.username";
+
+   public static final String JDBC_DRIVER_PATH = "jdbc.driverPath";
+
+   public static final String JDBC_DRIVER = "jdbc.driver";
+
+   public static final String JDBC_URL = "jdbc.url";
+
+   public static final String JDBC_USERNAME = "jdbc.username";
+
+   /**
 	 * The default name of a parameter used to pass the zip file 
 	 * with data to be processed.
 	 */
@@ -43,7 +60,7 @@ public class Configuration {
 	private Map<String,Exception> errors = new HashMap<String, Exception>();
 	private Map<String,String[]> ALL_OR_NONE = new HashMap<String, String[]>(){{
 		put("gdc.etl.*", new String[] { "gdc.etl.process_url", "gdc.etl.graph" });
-		put("jdbc.*", new String[] { "jdbc.driverPath", "jdbc.driver", "jdbc.username", "jdbc.url" });
+		put("jdbc.*", new String[] { JDBC_DRIVER_PATH, JDBC_DRIVER, JDBC_USERNAME, JDBC_URL });
 	}};
 	private String[][] ALTERNATIVES = new String[][] {
 		new String[] { "gdc.upload_archive", "gdc.upload_manifest" } 
@@ -52,46 +69,60 @@ public class Configuration {
 	private Configuration(Properties props) {}
 	
 	public static Configuration fromProperties(Properties props) throws InvalidConfigurationException {
+	   return fromProperties(new Properties(), props);
+	}
+	
+	/**
+	 * Expected usage:
+	 *   * props = command line parameters
+	 *   * defaults = config file
+	 * @param props
+	 * @param defaults
+	 * @return
+	 * @throws InvalidConfigurationException
+	 */
+	public static Configuration fromProperties(Properties props, Properties defaults) throws InvalidConfigurationException {
+	   InputConfiguration inputConf = new InputConfiguration(props, defaults);
 		Configuration conf = new Configuration(props);
 		// GoodData properties
-		conf.setGdcUsername(required(props, "gdc.username", conf.errors));
-		conf.setGdcPassword(required(props, "gdc.password", conf.errors));
+		conf.setGdcUsername(required(inputConf, GDC_USERNAME, conf.errors));
+		conf.setGdcPassword(required(inputConf, GDC_PASSWORD, conf.errors));
 		try {
-			conf.setGdcUploadUrl(props.getProperty("gdc.upload_url"));
+			conf.setGdcUploadUrl(inputConf.getProperty("gdc.upload_url"));
 		} catch (Exception e) {
 			conf.errors.put("gdc.upload_url", e);
 		}
 		try {
-			conf.setGdcEtlProcessUrl(props.getProperty("gdc.etl.process_url"));
+			conf.setGdcEtlProcessUrl(inputConf.getProperty("gdc.etl.process_url"));
 		} catch (Exception e) {
 			conf.errors.put("gdc.etl.process_url", e);
 		}
-		conf.setGdcEtlGraph(props.getProperty("gdc.etl.graph"));
-		conf.setGdcEtlParams(buildParams(props, "gdc.etl.param."));
-		conf.setGdcEtlParamNameZip(props.getProperty("gdc.etl.param_name.file"));
-		conf.setGdcEtlParamNameManifest(props.getProperty("gdc.etl.param_name.manifest"));
-		conf.setGdcEtlParamNameNow(props.getProperty("gdc.etl.param_name.now"));
-		conf.setGdcEtlParamNameReports(props.getProperty("gdc.etl.param_name.reports"));
-		conf.setGdcUploadArchive(props.getProperty("gdc.upload_archive"));
-		conf.setGdcUploadManifest(props.getProperty("gdc.upload_manifest"));
+		conf.setGdcEtlGraph(inputConf.getProperty("gdc.etl.graph"));
+		conf.setGdcEtlParams(buildParams(inputConf, "gdc.etl.param."));
+		conf.setGdcEtlParamNameZip(inputConf.getProperty("gdc.etl.param_name.file"));
+		conf.setGdcEtlParamNameManifest(inputConf.getProperty("gdc.etl.param_name.manifest"));
+		conf.setGdcEtlParamNameNow(inputConf.getProperty("gdc.etl.param_name.now"));
+		conf.setGdcEtlParamNameReports(inputConf.getProperty("gdc.etl.param_name.reports"));
+		conf.setGdcUploadArchive(inputConf.getProperty("gdc.upload_archive"));
+		conf.setGdcUploadManifest(inputConf.getProperty("gdc.upload_manifest"));
 		// Source files
-		conf.setFsInputDir(props.getProperty("filesystem.input_dir"));
-		conf.setFsWildcard(props.getProperty("filesystem.wildcard"));
+		conf.setFsInputDir(inputConf.getProperty("filesystem.input_dir"));
+		conf.setFsWildcard(inputConf.getProperty("filesystem.wildcard"));
 
 		// JDBC Data Source
-		conf.setJdbcDriver(props.getProperty("jdbc.driver"));
-		conf.setJdbcDriverPath(props.getProperty("jdbc.driver_path"));
-		conf.setJdbcUsername(props.getProperty("jdbc.username"));
-		conf.setJdbcPassword(props.getProperty("jdbc.password"));
-		conf.setJdbcUrl(props.getProperty("jdbc.url"));
+		conf.setJdbcDriver(inputConf.getProperty(JDBC_DRIVER));
+		conf.setJdbcDriverPath(inputConf.getProperty("jdbc.driver_path"));
+		conf.setJdbcUsername(inputConf.getProperty(JDBC_USERNAME));
+		conf.setJdbcPassword(inputConf.getProperty(JDBC_PASSWORD));
+		conf.setJdbcUrl(inputConf.getProperty(JDBC_URL));
 
 		// JDBC data sets
-		conf.jdbcExtractMappings = buildJdbcExtractMappings(props, "data.", ".sql");
-		conf.validate(props);
+		conf.jdbcExtractMappings = buildJdbcExtractMappings(inputConf, "data.", ".sql");
+		conf.validate(inputConf);
 		return conf;
 	}
 	
-	private void validate(Properties props) throws InvalidConfigurationException {
+	private void validate(InputConfiguration props) throws InvalidConfigurationException {
 		for (Map.Entry<String, String[]> aon : ALL_OR_NONE.entrySet()) {
 			int itemsSet = 0;
 			for (String i : aon.getValue()) {
@@ -123,7 +154,7 @@ public class Configuration {
 		}
 	}
 	
-	private static String required(Properties props, String key, Map<String, Exception> errors) {
+	private static String required(InputConfiguration props, String key, Map<String, Exception> errors) {
 		String value = props.getProperty(key);
 		if (value == null) {
 			errors.put(key, new IllegalArgumentException(key + " is a mandatory property"));
@@ -272,11 +303,10 @@ public class Configuration {
 		return gdcEtlParams;
 	}
 
-	private static Map<String,String> buildParams(Properties props, String paramsPrefix) {
+	private static Map<String,String> buildParams(InputConfiguration props, String paramsPrefix) {
 		Map<String,String> result = new HashMap<String, String>();
-		Enumeration propNames = props.propertyNames();
-		while (propNames.hasMoreElements()) {
-			String p = (String)propNames.nextElement();
+		Set<String> propNames = props.propertyNames();
+		for (final String p : propNames) {
 			if (p.startsWith(paramsPrefix)) {
 				String paramName = p.replaceFirst(paramsPrefix, "");
 				result.put(paramName, props.getProperty(p));
@@ -353,11 +383,10 @@ public class Configuration {
 		return jdbcExtractMappings;
 	}
 
-	private static Map<String, String> buildJdbcExtractMappings(Properties props, String prefix, String suffix) {
+	private static Map<String, String> buildJdbcExtractMappings(InputConfiguration props, String prefix, String suffix) {
 		Map<String,String> result = new HashMap<String, String>();
-		Enumeration propNames = props.propertyNames();
-		while (propNames.hasMoreElements()) {
-			String p = (String)propNames.nextElement();
+		Set<String> propNames = props.propertyNames();
+		for (final String p : propNames) {
 			if (p.startsWith(prefix) && p.endsWith(suffix)) {
 				String dataset = p.replaceFirst(prefix, "").replaceAll(suffix + "$", "");
 				result.put(dataset, props.getProperty(p));
@@ -389,5 +418,32 @@ public class Configuration {
 	public void setGdcEtlParamNameReports(String gdcEtlParamNameReports) {
 		this.gdcEtlParamNameReports = (gdcEtlParamNameReports == null) ? DEFAULT_PARAM_REPORTS : null;
 	}
-
+	
+	public static class InputConfiguration {
+	   Properties props;
+	   Properties defaults;
+	   InputConfiguration(Properties props, Properties defaults) {
+	      this.props = props;
+	      this.defaults = defaults;
+	   }
+	   
+	   String getProperty(String key) {
+	      String dashedKey = key.replaceAll("\\.", "-");
+	      String result = props.getProperty(dashedKey);
+	      if (result == null) {
+	         result = props.getProperty(key);
+   	      if (result == null) {
+   	         result = defaults.getProperty(key);
+   	      }
+	      }
+	      return result;
+	   }
+	   
+	   Set<String> propertyNames() {
+	      Set<String> result = new HashSet<String>();
+	      result.addAll((List<String>)Collections.list(defaults.propertyNames()));
+	      result.addAll((List<String>)Collections.list(props.propertyNames()));
+	      return result;
+	   }
+	}
 }

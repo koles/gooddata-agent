@@ -1,5 +1,12 @@
 package com.gooddata.agent;
 
+import static com.gooddata.agent.Configuration.GDC_PASSWORD;
+import static com.gooddata.agent.Configuration.GDC_USERNAME;
+import static com.gooddata.agent.Configuration.JDBC_DRIVER;
+import static com.gooddata.agent.Configuration.JDBC_DRIVER_PATH;
+import static com.gooddata.agent.Configuration.JDBC_PASSWORD;
+import static com.gooddata.agent.Configuration.JDBC_URL;
+import static com.gooddata.agent.Configuration.JDBC_USERNAME;
 import static java.lang.String.format;
 
 import java.io.File;
@@ -11,6 +18,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -26,13 +36,30 @@ import com.gooddata.agent.jdbc.JdbcExtractor;
  */
 public class Main {
    public static final String LOG4J_FILENAME = "log4j.properties";
+   private static final String CONFIG_FILE = ".CONFIG.FILE";
    private Configuration conf;
 
    private Main(String[] args) {
-      if (args.length != 1) {
-         error("Usage: java %s file.properties", Main.class.getName());
+      OptionParser parser = new OptionParser();
+      String [] paramNames = { JDBC_DRIVER, JDBC_DRIVER_PATH,
+            JDBC_PASSWORD, JDBC_URL, JDBC_USERNAME,
+            GDC_PASSWORD, GDC_USERNAME };
+      Properties props = loadCommandLineParameters(parser, paramNames, args);
+
+      String propsFile = props.getProperty(CONFIG_FILE);
+      if (propsFile == null) {
+         error("Usage: java  %s [options] file.properties", Main.class.getName());
       }
-      String propsFile = args[0];
+      Properties defaults = loadConfigurationFile(propsFile);
+
+      try {
+         conf = Configuration.fromProperties(props, defaults);
+      } catch (InvalidConfigurationException e) {
+         errors(e.getErrors().values());
+      }
+   }
+   
+   private static Properties loadConfigurationFile(String propsFile) {
       Properties props = new Properties();
       try {
          props.load(new FileInputStream(propsFile));
@@ -41,11 +68,26 @@ public class Main {
       } catch (IOException e) {
          error("Error reading file '%s'", propsFile);
       }
-      try {
-         conf = Configuration.fromProperties(props);
-      } catch (InvalidConfigurationException e) {
-         errors(e.getErrors().values());
+      return props;
+   }
+   
+   private static Properties loadCommandLineParameters(OptionParser parser, String[] paramNames, String[] args) {
+      for (String p : paramNames) {
+         parser.accepts(p.replaceAll("\\.", "-")).withRequiredArg();
       }
+      OptionSet options = parser.parse(args);
+      Properties props = new Properties();
+      for (String p : paramNames) {
+         String dashedParam = p.replaceAll("\\.", "-");
+         String value = (String)options.valueOf(dashedParam);
+         if (value != null) {
+            props.setProperty(p, value);
+         }
+      }
+      if (!options.nonOptionArguments().isEmpty()) {
+         props.setProperty(CONFIG_FILE, (String)options.nonOptionArguments().get(0));
+      }
+      return props;
    }
 
    private void run() {

@@ -16,6 +16,20 @@ Create and edit the properties file (e.g. "my.properties") based on the commente
 
     java -jar target/gdc-agent-0.6.jar my.properties
 
+Note: the following configuration parameters can be overriden using
+command line parameters:
+  * jdbc.driver`: `--jdbc-driver`
+  * jdbc.driverPath`: `--jdbc-driverPath`
+  * jdbc.password`: `--jdbc-password`
+  * jdbc.url`: `--jdbc-url`
+  * jdbc.username`: `--jdbc-username`
+  * gdc.password`: `--gdc-password`
+  * gdc.username`: `--gdc-username`
+
+For example:
+
+    java -jar target/gdc-agent-0.6.jar --jdbc-username=admin --jdbc-password=e6bweH5lx67ygM45 my.properties
+
 *Sample Configuration:*
 
     ##########################################
