@@ -2417,10 +2417,24 @@ public class GdcRESTApiWrapper {
     public GraphExecutionResult getGraphExecutionResult(String link) throws HttpMethodException {
         l.debug("Getting Graph execution status uri=" + link);
         HttpMethod ptm = createGetMethod(getServerUrl() + link);
+        int retries = 5;
+        int sleep = 5;
         try {
             String response = "";
             while (true) {
-                response = executeMethodOk(ptm);
+                boolean done = false;
+                for (int i = 0; i < retries && !done; i++) {
+                   try {
+                      response = executeMethodOk(ptm);
+                      done = true;
+                   } catch (HttpMethodException e) {
+                      if (i == retries - 4) {
+                         throw new GdcRestApiException("Error checking ETL execution status. Please check the status of " + link + " manually.", e);
+                      } else {
+                         try { Thread.sleep(sleep * 1000); } catch (InterruptedException e1) { }
+                      }
+                   }
+                }
                 JSONObject task = JSONObject.fromObject(response);
                 JSONObject state = task.getJSONObject("executionDetail");
                 if (state != null && !state.isNullObject() && !state.isEmpty()) {
