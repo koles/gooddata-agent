@@ -168,7 +168,10 @@ public class Main {
       if (conf.getJdbcUrl() != null) {
          JdbcConnector connector = new JdbcConnector();
          connector.setDriver(conf.getJdbcDriver());
-         connector.setDriverPath(conf.getJdbcDriverPath());
+         if (conf.getJdbcDriverPath() != null) {
+            // not mandatory - a driver may already be on the classpath
+            connector.setDriverPath(conf.getJdbcDriverPath());
+         }
          connector.setJdbcUrl(conf.getJdbcUrl());
          connector.setUsername(conf.getJdbcUsername());
          connector.setPassword(conf.getJdbcPassword());
