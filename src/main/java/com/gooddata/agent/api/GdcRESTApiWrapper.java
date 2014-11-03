@@ -3277,7 +3277,7 @@ public class GdcRESTApiWrapper {
         request.setRequestHeader("Content-Type", "application/json; charset=utf-8");
         request.setRequestHeader("Accept", "application/json");
         request.setRequestHeader("Accept-Charset", "utf-u");
-        request.setRequestHeader("User-Agent", "GoodData Agent/0.5");
+        request.setRequestHeader("User-Agent", "GoodData Agent/0.8.1");
         request.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         return request;
     }
