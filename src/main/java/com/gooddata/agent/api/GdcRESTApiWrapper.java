@@ -2388,9 +2388,24 @@ public class GdcRESTApiWrapper {
      * @throws GdcRestApiException
      */
     public GraphExecutionResult executeGraph(String processUri, String graph, Map<String,String> params) throws GdcRestApiException {
+       return executeGraph(processUri, graph, params, null);
+    }
+
+    /**
+     * Executes the MAQL and creates/modifies the project's LDM
+     *
+     * @param projectId the project's ID
+     * @param maql      String with the MAQL statements
+     * @return result {@link GraphExecutionResult}
+     * @throws GdcRestApiException
+     */
+    public GraphExecutionResult executeGraph(String processUri, String graph, Map<String,String> params, Map<String,String> hiddenParams) throws GdcRestApiException {
         l.debug("Executing Graph processUri=" + processUri + " graph = " + graph);
+        if (hiddenParams == null) {
+           hiddenParams = new HashMap<String, String>();
+        }
         PostMethod execPost = createPostMethod(processUri + "/executions");
-        JSONObject execStructure = getGraphExecStructure(graph, params);
+        JSONObject execStructure = getGraphExecStructure(graph, params, hiddenParams);
         InputStreamRequestEntity request = new InputStreamRequestEntity(new ByteArrayInputStream(
         		execStructure.toString().getBytes()));
         execPost.setRequestEntity(request);
@@ -2498,17 +2513,22 @@ public class GdcRESTApiWrapper {
         return maqlStructure;
     }
 
-    private JSONObject getGraphExecStructure(String graph, Map<String, String> params) {
+    private JSONObject getGraphExecStructure(String graph, Map<String, String> params, Map<String, String> hiddenParams) {
     	JSONObject structure = new JSONObject();
         JSONObject execution = new JSONObject();
         execution.put("graph", graph);
-        JSONObject paramsStructure = new JSONObject();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-        	paramsStructure.put(entry.getKey(), entry.getValue());
-        }
-        execution.put("params", paramsStructure);
+        execution.put("params", getEtlParamsStructure(params));
+        execution.put("hiddenParams", getEtlParamsStructure(hiddenParams));
         structure.put("execution", execution);
         return structure;
+    }
+    
+    private JSONObject getEtlParamsStructure(Map<String,String> params) {
+      JSONObject paramsStructure = new JSONObject();
+      for (Map.Entry<String, String> entry : params.entrySet()) {
+         paramsStructure.put(entry.getKey(), entry.getValue());
+      }
+      return paramsStructure;
     }
 
     protected String executeMethodOk(HttpMethod method) throws HttpMethodException {
