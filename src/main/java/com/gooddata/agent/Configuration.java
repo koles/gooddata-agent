@@ -28,7 +28,6 @@ import static java.lang.String.format;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,7 +53,7 @@ public class Configuration {
    public static final String JDBC_USERNAME = "jdbc.username";
 
    /**
-	 * The default name of a parameter used to pass the zip file 
+	 * The default name of a parameter used to pass the zip file
 	 * with data to be processed.
 	 */
 	public static final String DEFAULT_PARAM_ZIP = "gdc_agent_zip";
@@ -66,10 +65,54 @@ public class Configuration {
 	public static final String DEFAULT_PARAM_MANIFEST = "gdc_agent_manifest";
 	
 	/**
-	 * The default name of a parameter used to pass the timestamp 
+	 * The default name of a parameter used to pass the timestamp
 	 * formatted as yyyyMMddHHmmss.
 	 */
 	public static final String DEFAULT_PARAM_NOW = "gdc_agent_now";
+
+	/**
+	 * The default name of a parameter used to pass the username of a user
+	 * who started the ETL process. This information is not sent if the
+	 * gdc.etl.send_credentials property is set to false.
+	 */
+	public static final String DEFAULT_PARAM_GDC_USERNAME = "gdc_username";
+
+	/**
+    * The default name of a parameter used to pass the password of a user
+    * who started the ETL process. This information is not sent if the
+    * gdc.etl.send_credentials property is set to false.
+    */
+	public static final String DEFAULT_PARAM_GDC_PASSWORD = "gdc_password";
+
+   /**
+    * The default name of a parameter used to pass the password of a user
+    * who started the ETL process. This information is not sent if the
+    * gdc.etl.send_credentials property is set to false.
+    */
+	public static final String DEFAULT_PARAM_ZIP_URL = "gdc_agent_zip_url";
+
+	/**
+    * The default name of a parameter used to pass the password of a user
+    * who started the ETL process. Unlike {@link #DEFAULT_PARAM_ZIP_URL},
+    * this information is sent even if the gdc.etl.send_credentials property
+    * is set to false.
+    */
+	public static final String DEFAULT_PARAM_ZIP_URL_NO_CREDENTIALS = "gdc_agent_zip_url_nocreds";
+
+	/**
+    * The default name of a parameter used to pass the password of a user
+    * who started the ETL process. This information is not sent if the
+    * gdc.etl.send_credentials property is set to false.
+    */
+	public static final String DEFAULT_PARAM_MANIFEST_URL = "gdc_agent_manifest_url";
+
+	/**
+    * The default name of a parameter used to pass the password of a user
+    * who started the ETL process. Unlike {@link #DEFAULT_PARAM_MANIFEST_URL},
+    * this information is sent even if the gdc.etl.send_credentials property
+    */
+   public static final String DEFAULT_PARAM_MANIFEST_URL_NO_CREDENTIALS = "gdc_agent_manifest_url_nocreds";
+
 	
 	/**
 	 * The default name of a parameter used to pass a remote directory where
@@ -86,7 +129,7 @@ public class Configuration {
 		put("jdbc.*", new String[] { JDBC_DRIVER_PATH, JDBC_DRIVER, JDBC_USERNAME, JDBC_URL });
 	}};
 	private String[][] ALTERNATIVES = new String[][] {
-		new String[] { "gdc.upload_archive", "gdc.upload_manifest" } 
+		new String[] { "gdc.upload_archive", "gdc.upload_manifest" }
 	};
 
 	private Configuration(Properties props) {}
@@ -126,8 +169,17 @@ public class Configuration {
 		conf.setGdcEtlParamNameManifest(inputConf.getProperty("gdc.etl.param_name.manifest"));
 		conf.setGdcEtlParamNameNow(inputConf.getProperty("gdc.etl.param_name.now"));
 		conf.setGdcEtlParamNameReports(inputConf.getProperty("gdc.etl.param_name.reports"));
+		conf.setGdcEtlParamNameGdcUsername(inputConf.getProperty("gdc.etl.param_name.gdc_username"));
+		conf.setGdcEtlParamNameGdcPassword(inputConf.getProperty("gdc.etl.param_name.gdc_password"));
+		conf.setGdcEtlParamNameZipUrl(inputConf.getProperty("gdc.etl.param_name.url"));
+		conf.setGdcEtlParamNameZipUrlNoCreds(inputConf.getProperty("gdc.etl.param_name.url.no_creds"));
+		conf.setGdcEtlParamNameManifestUrl(inputConf.getProperty("gdc.etl.param_name.manifest_url"));
+		conf.setGdcEtlParamNameManifestUrlNoCreds(inputConf.getProperty("gdc.etl.param_name.manifest_url.no_creds"));
 		conf.setGdcUploadArchive(inputConf.getProperty("gdc.upload_archive"));
 		conf.setGdcUploadManifest(inputConf.getProperty("gdc.upload_manifest"));
+		if ("true".equalsIgnoreCase(inputConf.getProperty("gdc.etl.send_credentials"))) {
+		   conf.setSendCredentials(true);
+		}
 		// Source files
 		conf.setFsInputDir(inputConf.getProperty("filesystem.input_dir"));
 		conf.setFsWildcard(inputConf.getProperty("filesystem.wildcard"));
@@ -201,13 +253,21 @@ public class Configuration {
 				   gdcEtlParamNameManifest = null,
 				   gdcEtlParamNameNow = null,
 				   gdcEtlParamNameReports = null,
+				   gdcEtlParamNameGdcUsername = null,
+				   gdcEtlParamNameGdcPassword = null,
+				   gdcEtlParamNameZipUrl = null,
+				   gdcEtlParamNameZipUrlNoCreds = null,
+				   gdcEtlParamNameManifestUrl = null,
+				   gdcEtlParamNameManifestUrlNoCreds = null,
 				   gdcUploadArchive = null,
 				   gdcUploadManifest = null,
+				   gdcEtlSendCredentials = null,
 				   jdbcDriverPath = null,
 				   jdbcDriver = null,
 				   jdbcUsername = null,
 				   jdbcPassword = null,
 				   jdbcUrl;
+	private boolean sendCredentials = false;
 
 	public String getGdcUploadManifest() {
 		return gdcUploadManifest;
@@ -439,17 +499,74 @@ public class Configuration {
 	}
 
 	public void setGdcEtlParamNameReports(String gdcEtlParamNameReports) {
-		this.gdcEtlParamNameReports = (gdcEtlParamNameReports == null) ? DEFAULT_PARAM_REPORTS : null;
+		this.gdcEtlParamNameReports = (gdcEtlParamNameReports == null) ? DEFAULT_PARAM_REPORTS : null; // FIXME
 	}
 	
-	public static class InputConfiguration {
+	public String getGdcEtlParamNameGdcUsername() {
+      return gdcEtlParamNameGdcUsername;
+   }
+
+   public void setGdcEtlParamNameGdcUsername(String gdcEtlParamNameGdcUsername) {
+      this.gdcEtlParamNameGdcUsername = (gdcEtlParamNameGdcUsername == null) ? DEFAULT_PARAM_GDC_USERNAME : gdcEtlParamNameGdcUsername;
+   }
+
+   public String getGdcEtlParamNameGdcPassword() {
+      return gdcEtlParamNameGdcPassword;
+   }
+
+   public void setGdcEtlParamNameGdcPassword(String gdcEtlParamNameGdcPassword) {
+      this.gdcEtlParamNameGdcPassword = (gdcEtlParamNameGdcPassword == null) ? DEFAULT_PARAM_GDC_PASSWORD : gdcEtlParamNameGdcPassword;
+   }
+
+   public String getGdcEtlParamNameZipUrl() {
+      return gdcEtlParamNameZipUrl;
+   }
+
+   public void setGdcEtlParamNameZipUrl(String gdcEtcParamNameZipUrl) {
+      this.gdcEtlParamNameZipUrl = (gdcEtcParamNameZipUrl == null) ? DEFAULT_PARAM_ZIP_URL : gdcEtcParamNameZipUrl;
+   }
+
+   public String getGdcEtlParamNameZipUrlNoCreds() {
+      return gdcEtlParamNameZipUrlNoCreds;
+   }
+
+   public void setGdcEtlParamNameZipUrlNoCreds(String gdcEtcParamNameZipUrlNoCreds) {
+      this.gdcEtlParamNameZipUrlNoCreds = (gdcEtcParamNameZipUrlNoCreds == null) ? DEFAULT_PARAM_ZIP_URL_NO_CREDENTIALS : gdcEtcParamNameZipUrlNoCreds;
+   }
+
+   public String getGdcEtlParamNameManifestUrl() {
+      return gdcEtlParamNameManifestUrl;
+   }
+
+   public void setGdcEtlParamNameManifestUrl(String gdcEtcParamNameManifestUrl) {
+      this.gdcEtlParamNameManifestUrl = (gdcEtcParamNameManifestUrl == null) ? DEFAULT_PARAM_MANIFEST_URL : gdcEtcParamNameManifestUrl;
+   }
+
+   public String getGdcEtlParamNameManifestUrlNoCreds() {
+      return gdcEtlParamNameManifestUrlNoCreds;
+   }
+
+   public void setGdcEtlParamNameManifestUrlNoCreds(
+         String gdcEtcParamNameManifestUrlNoCreds) {
+      this.gdcEtlParamNameManifestUrlNoCreds = (gdcEtcParamNameManifestUrlNoCreds == null) ? DEFAULT_PARAM_MANIFEST_URL_NO_CREDENTIALS : gdcEtcParamNameManifestUrlNoCreds;
+   }
+
+   public boolean isSendCredentials() {
+      return sendCredentials;
+   }
+
+   public void setSendCredentials(boolean sendCredentials) {
+      this.sendCredentials = sendCredentials;
+   }
+
+   public static class InputConfiguration {
 	   Properties props;
 	   Properties defaults;
 	   InputConfiguration(Properties props, Properties defaults) {
 	      this.props = props;
 	      this.defaults = defaults;
 	   }
-	   
+
 	   String getProperty(String key) {
 	      String dashedKey = key.replaceAll("\\.", "-");
 	      String result = props.getProperty(dashedKey);
@@ -461,7 +578,7 @@ public class Configuration {
 	      }
 	      return result;
 	   }
-	   
+
 	   Set<String> propertyNames() {
 	      Set<String> result = new HashSet<String>();
 	      result.addAll((List<String>)Collections.list(defaults.propertyNames()));

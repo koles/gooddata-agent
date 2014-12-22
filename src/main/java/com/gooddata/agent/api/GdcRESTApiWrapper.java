@@ -133,7 +133,7 @@ public class GdcRESTApiWrapper {
     public static final String LINKS_UPLOADS_KEY = "uploads";
 
     public static final String DLI_MANIFEST_FILENAME = "upload_info.json";
-    
+
     public static final String QUERY_PROJECTDASHBOARDS = "projectdashboards";
     public static final String QUERY_FOLDERS = "folders";
     public static final String QUERY_DATASETS = "datasets";
@@ -2522,7 +2522,7 @@ public class GdcRESTApiWrapper {
         structure.put("execution", execution);
         return structure;
     }
-    
+
     private JSONObject getEtlParamsStructure(Map<String,String> params) {
       JSONObject paramsStructure = new JSONObject();
       for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -3309,10 +3309,10 @@ public class GdcRESTApiWrapper {
             super.finalize();
         }
     }
-    
+
     /**
      * API for querying users in a domain
-     * 
+     *
      * @param domain
      * @return
      */
@@ -3471,7 +3471,7 @@ public class GdcRESTApiWrapper {
     /**
      * Checks if report copying is finished. Workaround implementation due to
      * wrong handling of status code.
-     * 
+     *
      * @param link
      *            the link returned from the start loading
      * @return the loading status
@@ -3509,11 +3509,11 @@ public class GdcRESTApiWrapper {
 	    ptm.releaseConnection();
 	}
     }
-    
+
 
     /**
      * Retrieves the project info by the project's name
-     * 
+     *
      * @param name
      *            the project name
      * @return the GoodDataProjectInfo populated with the project's information
@@ -3545,7 +3545,7 @@ public class GdcRESTApiWrapper {
 
     /**
      * Returns the existing projects links
-     * 
+     *
      * @return accessible projects links
      * @throws com.gooddata.exception.HttpMethodException
      */
@@ -3568,7 +3568,7 @@ public class GdcRESTApiWrapper {
 
     /**
      * Create a new GoodData project
-     * 
+     *
      * @param name
      *            project name
      * @param desc
@@ -3583,11 +3583,11 @@ public class GdcRESTApiWrapper {
 	    throws GdcRestApiException {
 	    return this.createProject(name, desc, templateUri, null, null);
     }
-    
+
     /**
      * Returns the List of GoodDataProjectInfo structures for the accessible
      * projects
-     * 
+     *
      * @return the List of GoodDataProjectInfo structures for the accessible
      *         projects
      * @throws HttpMethodException

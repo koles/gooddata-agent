@@ -75,9 +75,20 @@ For example:
     # gdc.etl.param_name.file=gdc_agent_zip
     # gdc.etl.param_name.manifest=gdc_agent_manifest
     # gdc.etl.param_name.now=gdc_agent_now
+    # gdc.etl.param_name.gdc_username=gdc_username
+    # gdc.etl.param_name.gdc_password=gdc_password
+    # gdc.etl.param_name.url=gdc_agent_zip_url
+    # gdc.etl.param_name.url.no_creds=gdc_agent_zip_url_nocreds
+    # gdc.etl.param_name.manifest_url=gdc_agent_manifest_url
+    # gdc.etl.param_name.manifest_url.no_creds=gdc_agent_manifest_url_nocreds
     # Remote directory where the ETL is expected to put any reports
     # about the execution.
     # gdc.etl.param_name.repords=gdc_agent_reports
+
+    # If you want the agent to send credentials to the ETL process
+    # set the following property to false. Turned off by default for
+    # security reasons
+    # gdc.etl.send_credentials=false
 
     # CloudConnect ETL configuration
     gdc.etl.process_url=https://secure.gooddata.com/gdc/projects/fqp21nrdqm666u5nwgl0upsgee4a4xv2/dataload/processes/5f4b4ca9-3f1f-4821-80b1-17322e831e40

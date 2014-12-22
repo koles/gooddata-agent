@@ -36,9 +36,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -48,6 +51,7 @@ import joptsimple.OptionSet;
 import org.apache.log4j.PropertyConfigurator;
 
 import com.gooddata.agent.api.GdcRESTApiWrapper;
+import com.gooddata.agent.api.GdcRESTApiWrapper.GdcUser;
 import com.gooddata.agent.api.GdcRESTApiWrapper.GraphExecutionResult;
 import com.gooddata.agent.api.NamePasswordConfiguration;
 import com.gooddata.agent.jdbc.JdbcConnector;
@@ -55,7 +59,7 @@ import com.gooddata.agent.jdbc.JdbcExtractor;
 
 /**
  * Hello world!
- * 
+ *
  */
 public class Main {
    public static final String LOG4J_FILENAME = "log4j.properties";
@@ -81,7 +85,7 @@ public class Main {
          errors(e.getErrors().values());
       }
    }
-   
+
    private static Properties loadConfigurationFile(String propsFile) {
       Properties props = new Properties();
       try {
@@ -93,7 +97,7 @@ public class Main {
       }
       return props;
    }
-   
+
    private static Properties loadCommandLineParameters(OptionParser parser, String[] paramNames, String[] args) {
       for (String p : paramNames) {
          parser.accepts(p.replaceAll("\\.", "-")).withRequiredArg();
@@ -143,25 +147,60 @@ public class Main {
       if (conf.getGdcEtlProcessUrl() != null) {
          GdcRESTApiWrapper client = new GdcRESTApiWrapper(
                buildNamePasswordConfiguration(conf));
-         Map<String, String> params = conf.getGdcEtlParams();
-         if (conf.getGdcUploadUrl() != null) {
-            if (conf.getGdcUploadArchive() != null) {
-               params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
-            }
-            if (conf.getGdcUploadManifest() != null) {
-               params.put(conf.getGdcEtlParamNameManifest(),
-                     collector.getMainFile());
-            }
-         }
+         EtlParams etlParams = createEtlParameters(conf, collector);
          client.login();
          GraphExecutionResult ger = client.executeGraph(
-               conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), params);
+               conf.getGdcEtlProcessUrl(), conf.getGdcEtlGraph(), etlParams.params, etlParams.hiddenParams);
          ok(format("Graph %s under %s executed, log file at %s",
                conf.getGdcEtlProcessPath(), conf.getGdcEtlGraph(),
                ger.getLogUrl()));
       } else {
          ok("ETL not set up, skipping");
       }
+   }
+
+   private static EtlParams createEtlParameters(Configuration conf, Collector collector) {
+      final Map<String,String> params = conf.getGdcEtlParams();
+      final Map<String,String> hiddenParams = new HashMap<String,String>();
+      final String gdcUserNameUrlenc, gdcPasswordUrlenc;
+      try {
+         gdcUserNameUrlenc = URLEncoder.encode(conf.getGdcUsername(), "utf-8");
+         gdcPasswordUrlenc = URLEncoder.encode(conf.getGdcPassword(), "utf-8");
+      } catch (UnsupportedEncodingException e) {
+         throw new AssertionError(e);
+      }
+      if (conf.getGdcUploadUrl() != null) {
+         if (conf.getGdcUploadArchive() != null) {
+            params.put(conf.getGdcEtlParamNameZip(), collector.getMainFile());
+            params.put(conf.getGdcEtlParamNameZipUrlNoCreds(), mainFileUrlNoCreds(conf, collector));
+            if (conf.isSendCredentials()) {
+               params.put(conf.getGdcEtlParamNameZipUrl(), mainFileUrl(conf, collector, gdcUserNameUrlenc, gdcPasswordUrlenc));
+            }
+         }
+         if (conf.getGdcUploadManifest() != null) {
+            params.put(conf.getGdcEtlParamNameManifest(),
+                  collector.getMainFile());
+            params.put(conf.getGdcEtlParamNameManifestUrlNoCreds(),
+                  format("%s/%s", conf.getGdcUploadManifest().replaceAll("/$", ""), collector.getMainFile()));
+            if (conf.isSendCredentials()) {
+               params.put(conf.getGdcEtlParamNameManifestUrl(), mainFileUrl(conf, collector, gdcUserNameUrlenc, gdcPasswordUrlenc));
+            }
+         }
+      }
+      if (conf.isSendCredentials()) {
+         params.put(conf.getGdcEtlParamNameGdcUsername(), conf.getGdcUsername());
+         hiddenParams.put(conf.getGdcEtlParamNameGdcPassword(), conf.getGdcPassword());
+      }
+      return new EtlParams(params, hiddenParams);
+   }
+
+   private static String mainFileUrl(Configuration conf, Collector collector, String gdcUserNameUrlenc, String gdcPasswordUrlenc) {
+      return format("%s://%s:%s@%s%s/%s", conf.getGdcUploadProtocol(), gdcUserNameUrlenc, gdcPasswordUrlenc,
+            conf.getGdcUploadHost(), conf.getGdcUploadPath(), collector.getMainFile());
+   }
+
+   private static String mainFileUrlNoCreds(Configuration conf, Collector collector) {
+      return format("%s/%s", conf.getGdcUploadUrl().replaceAll("/$", ""), collector.getMainFile());
    }
 
    private void jdbcExtract(Collector collector) {
@@ -236,5 +275,14 @@ public class Main {
          System.err.println(e.getMessage());
       }
       System.exit(1);
+   }
+
+   private static class EtlParams {
+      final Map<String,String> params;
+      final Map<String,String> hiddenParams;
+      public EtlParams(Map<String,String> params, Map<String,String> hiddenParams) {
+         this.params = params;
+         this.hiddenParams = hiddenParams;
+      }
    }
 }

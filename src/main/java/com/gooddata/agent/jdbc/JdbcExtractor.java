@@ -47,8 +47,8 @@ public class JdbcExtractor {
 	 * @param datasets maps data set names (used to derive file names) to SQL queries
 	 * @return temp folder where the extracted files are stored or <tt>null</tt>
 	 * 		if nothing was extracted
-	 * @throws SQLException 
-	 * @throws IOException 
+	 * @throws SQLException
+	 * @throws IOException
 	 */
 	public File extract(Map<String,String> datasets) throws SQLException, IOException {
 		File tmpdir = createTempDir();

@@ -42,7 +42,7 @@ public class CollectorUtils {
 
     /**
      * Creates new zipFile which will contain all files listed in attribute _csvFiles_ and dataSetManifest.
-     * 
+     *
      * Mostly stolen from {@link com.gooddata.restapi.upload.impl.AbstractUploader}
      *
      * @param csvFiles map of files to be included in ZIP file. Key=file-name in ZIP file, value=path to that file on filesystem.
@@ -73,7 +73,7 @@ public class CollectorUtils {
             // IOUtils.closeQuietly(out);
         }
     }
-    
+
     /**
      * Stolen from {@link com.gooddata.restapi.upload.impl.AbstractUploader}
      */
