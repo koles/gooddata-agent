@@ -165,6 +165,7 @@ public class Configuration {
 		}
 		conf.setGdcEtlGraph(inputConf.getProperty("gdc.etl.graph"));
 		conf.setGdcEtlParams(buildParams(inputConf, "gdc.etl.param."));
+		conf.setGdcEtlHiddenParams(buildParams(inputConf, "gdc.etl.hidden_param."));
 		conf.setGdcEtlParamNameZip(inputConf.getProperty("gdc.etl.param_name.file"));
 		conf.setGdcEtlParamNameManifest(inputConf.getProperty("gdc.etl.param_name.manifest"));
 		conf.setGdcEtlParamNameNow(inputConf.getProperty("gdc.etl.param_name.now"));
@@ -278,9 +279,18 @@ public class Configuration {
 	}
 
 	private Map<String,String> gdcEtlParams = null,
+	                         gdcEtlHiddenParams = null,
 			                   jdbcExtractMappings = null;
 
-	// Source files
+	public Map<String, String> getGdcEtlHiddenParams() {
+      return gdcEtlHiddenParams;
+   }
+
+   public void setGdcEtlHiddenParams(Map<String, String> gdcEtlHiddenParams) {
+      this.gdcEtlHiddenParams = gdcEtlHiddenParams;
+   }
+
+   // Source files
 	private String fsInputDir = null,
 				   fsWildcard = null;
 

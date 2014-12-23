@@ -161,7 +161,7 @@ public class Main {
 
    private static EtlParams createEtlParameters(Configuration conf, Collector collector) {
       final Map<String,String> params = conf.getGdcEtlParams();
-      final Map<String,String> hiddenParams = new HashMap<String,String>();
+      final Map<String,String> hiddenParams = conf.getGdcEtlHiddenParams();
       final String gdcUserNameUrlenc, gdcPasswordUrlenc;
       try {
          gdcUserNameUrlenc = URLEncoder.encode(conf.getGdcUsername(), "utf-8");

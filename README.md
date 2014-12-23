@@ -95,6 +95,7 @@ For example:
     gdc.etl.graph=Test/graph/import_archive.grf
     gdc.etl.param.param1=a parameter
     gdc.etl.param.param2=yet another parameter
+    gdc.etl.hidden_param.super_secret_parameter=pa$$w0rd01
 
 
 *... or build from sources:*
