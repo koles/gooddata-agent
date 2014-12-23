@@ -42,13 +42,16 @@ Moreover, if the `gdc.etl.send_credentials` property is set to
 `gdc_username`, `gdc_password` and `gdc_agent_zip_url` or
 `gdc_agent_manifest_url`.
 
-Note the gdc_agent_zip_url and gdc_agent_manifest_url parameters
-will include the full URL of the uploaded file including the
+Note you can use the gdc_agent_zip_url or gdc_agent_manifest_url variable
+in the FileDownloader CloudConnect component as it will include the full URL of the uploaded file including the
 credentials, for example
 `https://user%40company.com:P4$$w0rd@secure-di.gooddata.com/project-uploads/fqp21nrdqm666u5nwgl0upsgee4a4xv2/data-20141223161932.zip`.
 
 In addition, you can provide custom ETL parameters using
 property keys prefixed `gdc.etl.param.` or `gdc.etl.hidden_param.`
+
+_Caution:_ never put any sensitive information directly into your
+CloudConnect graph or into the workspace.prm CloudConnect configuration file.
 
 *Sample Configuration:*
 
