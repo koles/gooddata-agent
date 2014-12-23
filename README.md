@@ -30,6 +30,26 @@ For example:
 
     java -jar target/gdc-agent-0.8.jar --jdbc-username=admin --jdbc-password=e6bweH5lx67ygM45 my.properties
 
+*Triggering server side ETL:*
+
+The agent can optionally run a server side ETL process. It will
+automatically send information about the uploaded file in the ETL
+parameters: `gdc_agent_zip`/ `gdc_agent_manifest` and
+`gdc_agent_zip_url_nocreds`/`gdc_agent_manifest_url_nocreds`.
+
+Moreover, if the `gdc.etl.send_credentials` property is set to
+`true`, the agent tool will also sent the following parameters:
+`gdc_username`, `gdc_password` and `gdc_agent_zip_url` or
+`gdc_agent_manifest_url`.
+
+Note the gdc_agent_zip_url and gdc_agent_manifest_url parameters
+will include the full URL of the uploaded file including the
+credentials, for example
+`https://user%40company.com:P4$$w0rd@secure-di.gooddata.com/project-uploads/fqp21nrdqm666u5nwgl0upsgee4a4xv2/data-20141223161932.zip`.
+
+In addition, you can provide custom ETL parameters using
+property keys prefixed `gdc.etl.param.` or `gdc.etl.hidden_param.`
+
 *Sample Configuration:*
 
     ##########################################
