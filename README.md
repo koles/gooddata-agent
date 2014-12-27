@@ -30,10 +30,10 @@ For example:
 
     java -jar target/gdc-agent-0.8.jar --jdbc-username=admin --jdbc-password=e6bweH5lx67ygM45 my.properties
 
-*Triggering server side ETL:*
+*Triggering a server side ETL:*
 
 The agent can optionally run a server side ETL process. It will
-automatically send information about the uploaded file in the ETL
+automatically send the information about the uploaded file in the ETL
 parameters: `gdc_agent_zip`/ `gdc_agent_manifest` and
 `gdc_agent_zip_url_nocreds`/`gdc_agent_manifest_url_nocreds`.
 
