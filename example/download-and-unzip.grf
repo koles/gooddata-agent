@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><Graph author="koles" created="Mon Dec 22 08:19:27 PST 2014" guiVersion="3.4.4.P" id="1419960766450" licenseType="Commercial" modified="Tue Dec 30 10:15:16 PST 2014" modifiedBy="koles" name="download-and-unzip" revision="1.7" showComponentDetails="true">
+<Global>
+<Metadata id="Metadata19" previewAttachmentCharset="ISO-8859-1">
+<Record name="O_Record" previewAttachmentCharset="ISO-8859-1" type="delimited">
+<Field auto_filling="source_name" eofAsDelimiter="true" name="filename" type="string"/>
+<Field delimiter="\n" eofAsDelimiter="true" name="content" type="byte"/>
+</Record>
+</Metadata>
+<Metadata id="Metadata3" previewAttachmentCharset="ISO-8859-1">
+<Record fieldDelimiter="," name="zipFileList" previewAttachmentCharset="ISO-8859-1" recordDelimiter="\n" type="delimited">
+<Field name="fileName" type="string"/>
+<Field name="filePath" type="string"/>
+<Field name="created" type="string"/>
+<Field name="lastModified" type="string"/>
+<Field name="size" type="string"/>
+<Field name="byte" type="byte"/>
+<Field name="date" type="long"/>
+<Field name="dateStr" type="string"/>
+<Field name="temp" type="string"/>
+</Record>
+</Metadata>
+<Note alignment="1" backgroundColorB="225" backgroundColorG="255" backgroundColorR="255" enabled="true" folded="false" height="156" id="Note0" textColorB="0" textColorG="0" textColorR="0" textFontSize="12" title="Phase 0: Download the zip file to a local folder" titleColorB="0" titleColorG="0" titleColorR="0" titleFontSize="14" width="364" x="533" y="52">
+<attr name="text"><![CDATA[The components in the phase 0 download the zip file previously uploaded by the agent tool from GoodData project storage into the local ${DATA_TMP_DIR} folder.
+
+In addition to the standard GDC_PROJECT_ID  parameter, the following ETL parameters are expected to be set by the agent tool:
+GD_USERNAME, GD_PASSWORD, gdc_agent_file]]></attr>
+</Note>
+<Note alignment="1" backgroundColorB="225" backgroundColorG="255" backgroundColorR="255" enabled="true" folded="false" height="201" id="Note1" textColorB="0" textColorG="0" textColorR="0" textFontSize="12" title="Phase 1: Extract the contents of the zip file" titleColorB="0" titleColorG="0" titleColorR="0" titleFontSize="14" width="364" x="533" y="274">
+<attr name="text"><![CDATA[The contents of the zip file downloaded in the phase 0 is extracted into the local ${DATA_TMP_FOLDER}.
+
+This phase can be followed by a business logic that assumes that all data are already available in a local folder.
+
+For a better readability, consider separate a copy of this graph and the business logic into standalone subgraphs orchestrated by a main graph with several RunGraph components.]]></attr>
+</Note>
+<Note alignment="1" backgroundColorB="225" backgroundColorG="255" backgroundColorR="255" enabled="true" folded="false" height="68" id="Note2" textColorB="0" textColorG="0" textColorR="0" textFontSize="12" title="Reusable CloudConnect graph for retrieving data uploaded by the agent tool" titleColorB="0" titleColorG="0" titleColorR="0" titleFontSize="14" width="873" x="24" y="-42">
+<attr name="text"><![CDATA[This graph downloads and unzips the zip file uploaded by the agent tool into a local directory.
+This graph is ready to be copied into your ETL project plugged at the beginning of your data import process. ]]></attr>
+</Note>
+<Dictionary/>
+</Global>
+<Phase number="0">
+<Node baseURL="https://${GD_USERNAME}:${GD_PASSWORD}@secure-di.gooddata.com/project-uploads/${GDC_PROJECT_ID}/${gdc_agent_file}" destination="${DATA_TMP_DIR}" enabled="enabled" guiName="File Download" guiX="24" guiY="52" id="FILE_DOWNLOAD" maxRetryCount="2" type="FILE_DOWNLOAD"/>
+<Node enabled="enabled" guiName="Trash" guiX="185" guiY="52" id="TRASH" type="TRASH"/>
+<Edge fromNode="FILE_DOWNLOAD:0" guiBendpoints="" guiRouter="Manhattan" id="Edge1" inPort="Port 0 (in)" metadata="Metadata3" outPort="Port 0 (out)" toNode="TRASH:0"/>
+</Phase>
+<Phase number="1">
+<Node enabled="enabled" fileURL="zip:${DATA_TMP_DIR}/${gdc_agent_file}#*.csv" guiName="Data Reader" guiX="24" guiY="274" id="DATA_READER" type="DATA_READER"/>
+<Node charset="UTF-8" enabled="enabled" excludeFields="filename" fileURL="${DATA_TMP_DIR}" guiName="UniversalDataWriter" guiX="352" guiY="274" id="DATA_WRITER3" partitionFileTag="keyNameFileTag" partitionKey="filename" type="DATA_WRITER"/>
+<Node charset="UTF-8" enabled="enabled" guiName="Reformat" guiX="185" guiY="274" id="REFORMAT2" type="REFORMAT">
+<attr name="transform"><![CDATA[//#CTL2
+integer index = 0;
+
+// Transforms input record into output record.
+function integer transform() {
+	$out.0.content = $in.0.content;
+	$out.0.filename = split($in.0.filename,"#")[1];
+
+	return ALL;
+}
+
+// Called during component initialization.
+// function boolean init() {}
+
+// Called during each graph run before the transform is executed. May be used to allocate and initialize resources
+// required by the transform. All resources allocated within this method should be released
+// by the postExecute() method.
+// function void preExecute() {}
+
+// Called only if transform() throws an exception.
+//function integer transformOnError(string errorMessage, string stackTrace) {}
+
+// Called during each graph run after the entire transform was executed. Should be used to free any resources
+// allocated within the preExecute() method.
+// function void postExecute() {}
+
+// Called to return a user-defined error message when an error occurs.
+// function string getMessage() {}
+]]></attr>
+</Node>
+<Edge fromNode="DATA_READER:0" guiBendpoints="" guiRouter="Manhattan" id="Edge3" inPort="Port 0 (in)" metadata="Metadata19" outPort="Port 0 (output)" toNode="REFORMAT2:0"/>
+<Edge debugMode="false" fromNode="REFORMAT2:0" guiBendpoints="" guiRouter="Manhattan" id="Edge5" inPort="Port 0 (in)" metadata="Metadata19" outPort="Port 0 (out)" toNode="DATA_WRITER3:0"/>
+</Phase>
+</Graph>

@@ -50,6 +50,10 @@ credentials, for example
 In addition, you can provide custom ETL parameters using
 property keys prefixed `gdc.etl.param.` or `gdc.etl.hidden_param.`
 
+An example of a simple CloudConnect graph for retrieving the
+the data uploaded by the agent to make it available to your ETL business
+logic is available in the `example/` folder.
+
 _Caution:_ never put any sensitive information directly into your
 CloudConnect graph or into the workspace.prm CloudConnect configuration file.
 
