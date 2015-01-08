@@ -6,7 +6,7 @@ A simple command line tool for uploading data to GoodData's WebDAV storage
 
 *Download:*
 
-from http://gooddata.s3.amazonaws.com/agent/gdc-agent-0.9.jar
+from http://gooddata.s3.amazonaws.com/agent/gdc-agent-0.9.1.jar
 
 *Configure:*
 
@@ -14,7 +14,7 @@ Create and edit the properties file (e.g. "my.properties") based on the commente
 
 *Run:*
 
-    java -jar target/gdc-agent-0.9.jar my.properties
+    java -jar target/gdc-agent-0.9.1.jar my.properties
 
 Note: the following configuration parameters can be overriden using
 command line parameters:
@@ -28,7 +28,7 @@ command line parameters:
 
 For example:
 
-    java -jar target/gdc-agent-0.8.jar --jdbc-username=admin --jdbc-password=e6bweH5lx67ygM45 my.properties
+    java -jar target/gdc-agent-0.9.1.jar --jdbc-driverPath=/opt/lib/mysql.jar --jdbc-username=admin --jdbc-password=e6bweH5lx67ygM45 my.properties
 
 *Triggering a server side ETL:*
 
@@ -70,7 +70,7 @@ CloudConnect graph or into the workspace.prm CloudConnect configuration file.
     #################################
     ### Source data in a database ###
     #################################
-    jdbc.driver_path=/usr/share/java/mysql-connector-java-5.1.5.jar
+    jdbc.driverPath=/usr/share/java/mysql-connector-java-5.1.5.jar
     jdbc.driver=com.mysql.jdbc.Driver
     jdbc.username=extracts
     jdbc.password=*******
