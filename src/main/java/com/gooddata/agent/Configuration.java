@@ -46,6 +46,9 @@ public class Configuration {
 
    public static final String JDBC_DRIVER_PATH = "jdbc.driverPath";
 
+   // for a backward compatibility
+   public static final String JDBC_DRIVER_PATH_BC = "jdbc.driver_path";
+
    public static final String JDBC_DRIVER = "jdbc.driver";
 
    public static final String JDBC_URL = "jdbc.url";
@@ -187,7 +190,10 @@ public class Configuration {
 
 		// JDBC Data Source
 		conf.setJdbcDriver(inputConf.getProperty(JDBC_DRIVER));
-		conf.setJdbcDriverPath(inputConf.getProperty("jdbc.driver_path"));
+		conf.setJdbcDriverPath(inputConf.getProperty(JDBC_DRIVER_PATH_BC)); // backward compatibility
+		if (inputConf.getProperty(JDBC_DRIVER_PATH) != null) {
+		   conf.setJdbcDriverPath(inputConf.getProperty(JDBC_DRIVER_PATH));
+		}
 		conf.setJdbcUsername(inputConf.getProperty(JDBC_USERNAME));
 		conf.setJdbcPassword(inputConf.getProperty(JDBC_PASSWORD));
 		conf.setJdbcUrl(inputConf.getProperty(JDBC_URL));
